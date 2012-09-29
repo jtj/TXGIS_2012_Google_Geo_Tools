@@ -257,12 +257,25 @@ courseviz.showMarkers = function(markers, visible) {
 
 
 courseviz.addHeatmap = function(map) {
-    this.estTimeslices();
-    
     this.heatmap = new google.maps.visualization.HeatmapLayer({
-        data: this.timeslices[0],
         map: map
     });
+
+    this.heatmap._map = map; // save a copy of the map for toggling heatmap visibility
+    this.showHeatmap(false);
+};
+
+
+courseviz.showHeatmap = function(visible) {
+    if (this.heatmap.visible != visible) {
+        if (visible && !this.timeslices) {
+            this.estTimeslices();
+            this.heatmap.setData(this.timeslices[this.frame || 0]);
+        }
+
+        this.heatmap.visible = visible;
+        this.heatmap.setMap(visible ? this.heatmap._map : null);
+    }
 };
 
 
@@ -270,7 +283,6 @@ courseviz.next = function(timestamp) {
     if (this.paused) return;
     if ((timestamp - this.lastframe) < (1000 / this.fps)) return requestAnimationFrame(this.next);
 
-    this.frame++;
     this.lastframe = timestamp;
 
     this.updateRunnerMarkers();
@@ -283,11 +295,21 @@ courseviz.next = function(timestamp) {
         requestAnimationFrame(this.next /*, mapDiv */);
     }
 
-    if (this.frame >= this.maxframe) this.frame = 0;
+    this.frame++;
+    if (this.frame > this.maxframe) {
+        this.frame = 0;
+        this.done();
+    }
 }.bind(courseviz);
 
 
-courseviz.play = function() {
+courseviz.play = function(interval) {
+    if (this.interval != interval) {
+        this.estLocations();
+
+        if (this.heatmap.visible) this.estTimeslices();
+    }
+
     if (!this.frame) this.frame = 0;
     if (!this.fps) this.fps = 60;
     if (this.frame == 0) {
@@ -311,10 +333,13 @@ courseviz.pause = function() {
 courseviz.reset = function() {
     this.frame = 0;
     this.paused = true;
-    if (this.heatmap) this.heatmap.setData(this.timeslices[this.frame]);
+    if (this.heatmap.visible) this.heatmap.setData(this.timeslices[this.frame]);
     this.updateRunnerMarkers();
     this.updateClock()
 }.bind(courseviz);
+
+
+courseviz.done = function() {};
 
 
 courseviz.addRunnerMarkers = function(map, runners) {
@@ -454,6 +479,8 @@ courseviz.addClock = function(map) {
         animate: false,
         updateHandler: courseviz.updateClock.bind(courseviz)
     });
+
+    this.showClock(false);
 };
 
 
@@ -462,21 +489,33 @@ courseviz.updateClock = function() {
 
     var ctx = this.clockLayer.canvas.getContext('2d');
     var fontsize = 48;
-    var topmargin = 25;
-    var leftmargin = 100;
+    var vmargin = 30;
+    var hmargin = 10;
+
 
     this.clock = this.frame * this.interval;
 
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.font = 'bold ' + fontsize + 'px sans-serif';
 
+    var metrics = ctx.measureText('00:00:00');
+    var textpos = { 
+        x: ctx.canvas.width - metrics.width - hmargin,
+        y: ctx.canvas.height - vmargin
+    };
+
     ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
     ctx.lineWidth = 4;
-    ctx.strokeText(this.formatTime(this.clock), leftmargin, fontsize + topmargin);
+    ctx.strokeText(this.formatTime(this.clock), textpos.x, textpos.y);
 
     ctx.fillStyle = 'rgb(66, 66, 66)';
-    ctx.fillText(this.formatTime(this.clock), leftmargin, fontsize + topmargin);
+    ctx.fillText(this.formatTime(this.clock), textpos.x, textpos.y);
 };
+
+
+courseviz.showClock = function(visible) {
+    if (this.clockLayer) $(this.clockLayer.canvas).toggle(visible);
+}.bind(courseviz);
 
 
 courseviz.restrictZoom = function(map, min, max) {

@@ -1,7 +1,43 @@
 
+html, body {
+    height: 100%;
+    margin: 0;
+    font: 14px sans-serif;
+}
+
 .map {
-    margin-top: 20px;
     width: 100%;
-    height: 500px;
+    height: 100%;
+}
+
+.settings {
+    padding: 20px;
+    width: 250px;
+    background: #fff;
+    border: 1px solid #29216d;
+}
+
+.settings-handle {
+    border: 1px solid #29216d;
+    border-left: none;
+    margin-top: -1px;
+}
+
+.settings ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.settings fieldset {
+    margin: 10px 0px;
+}
+
+.settings fieldset > div {
+    margin: 15px 0px;
+}
+
+.settings fieldset > ul {
+    margin: 5px 0px;
 }
 

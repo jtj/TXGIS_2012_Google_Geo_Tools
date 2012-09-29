@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <!-- 
 You are free to copy and use this sample in accordance with the terms
@@ -12,6 +11,7 @@ of the Apache license (http://www.apache.org/licenses/LICENSE-2.0.html)
 
     <link rel="stylesheet" type="text/css" href="css/map.css"/>
     <script src="lib/jquery-1.8.1.js"></script>
+    <script src="lib/jquery.tabSlideOut.v2.0.js"></script>
     <script src="http://maps.google.com/maps/api/js?sensor=false&libraries=visualization"></script>
     <script src="js/CanvasLayer.js"></script>
     <script src="js/courseviz.js"></script>
@@ -24,17 +24,23 @@ of the Apache license (http://www.apache.org/licenses/LICENSE-2.0.html)
 
         var map = new google.maps.Map(mapDiv, {
             center: new google.maps.LatLng(30.292392, -97.749323),
-            zoom: 12,
-            mapTypeId: google.maps.MapTypeId.TERRAIN
+            zoom: 13,
+            mapTypeId: google.maps.MapTypeId.TERRAIN,
+            panControlOptions: {
+                position: google.maps.ControlPosition.LEFT_BOTTOM
+            },
+            zoomControlOptions: {
+                position: google.maps.ControlPosition.LEFT_BOTTOM
+            }
         });
 
         courseviz.addCourse(map);
         courseviz.addCheckpointMarkers(map);
         courseviz.addMileMarkers(map);
-        courseviz.restrictZoom(map, 11, 15);
+        courseviz.restrictZoom(map, 12, 15);
 
         // Estimate location for each runner at each time interval
-        courseviz.estLocations(/* seconds per interval */ 60 * 5);
+        courseviz.estLocations(/* seconds per interval */ 60 * 10);
 
         // DANGER: Don't use the heatmap with intervals of less than 1 to 10 minutes
         courseviz.addHeatmap(map);
@@ -42,15 +48,54 @@ of the Apache license (http://www.apache.org/licenses/LICENSE-2.0.html)
         courseviz.addClock(map);
 
         courseviz.addRunnerMarkers(map, courseviz.overallWinners());
-        courseviz.addRunnerMarkers(map, courseviz.agegroupWinners());
+        //courseviz.addRunnerMarkers(map, courseviz.agegroupWinners());
         courseviz.addRunnerMarkers(map, courseviz.runnersByName('Daniel Parker', 'Richard Brown'));
         courseviz.fps = 24;
+    });
 
+    // configure settings sidebar
+    $(function () {
+        $('.settings').tabSlideOut({
+            tabHandle: '.settings-handle',                     //class of the element that will become your tab
+            pathToTabImage: 'images/settings-icon.png', //path to the image for the tab //Optionally can be set using css
+            imageHeight: '36px',                     //height of tab image           //Optionally can be set using css
+            imageWidth: '100px',                       //width of tab image            //Optionally can be set using css
+            tabLocation: 'left',                      //side of screen where tab lives, top, right, bottom, or left
+            speed: 300,                               //speed of animation
+            action: 'click',                          //options: 'click' or 'hover', action to trigger animation
+            topPos: '5px',                          //position from the top/ use if tabLocation is left or right
+            leftPos: '0px',                          //position from left/ use if tabLocation is bottom or top
+            fixedPosition: false                      //options: true makes it stick(fixed position) on scroll
+        });
+    
+        $('#play').click(function () {
+            $('#pause').attr('disabled', false);
 
-        // Configure play controls for animation
-        $('#play').click(courseviz.play);
-        $('#pause').click(courseviz.pause);
-        $('#reset').click(courseviz.reset);
+            var interval = parseFloat($('#intervalDropdown').val()) * 60;
+            courseviz.play(interval);
+        });
+
+        $('#pause').click(function () {
+            $('#pause').attr('disabled', true);
+            $('#reset').attr('disabled', false);
+            courseviz.pause();
+        });
+
+        $('#reset').click(function () {
+            $('#play').attr('disabled', false);
+            $('#pause').attr('disabled', true);
+            $('#reset').attr('disabled', true);
+            courseviz.reset();
+        });
+
+        courseviz.done = function () {
+            $('#pause').attr('disabled', true);
+            $('#reset').attr('disabled', false);
+        };
+
+        $('#showHeatmapCheckbox').click(function (evt) {
+            courseviz.showHeatmap(evt.target.checked);
+        });
 
         $('#mileMarkerOption').click(function () {
             courseviz.showMarkers(courseviz.checkpointMarkers, false);
@@ -66,28 +111,72 @@ of the Apache license (http://www.apache.org/licenses/LICENSE-2.0.html)
             courseviz.showMarkers(courseviz.checkpointMarkers, false);
             courseviz.showMarkers(courseviz.mileMarkers, false);
         });
+
+        $('#clockCheckbox').click(function (evt) {
+            courseviz.showClock(evt.target.checked);
+        });
     });
 
     </script>
 </head>
 
 <body>
-    <button id="play" type="button">Play</button>
-    <button id="pause" type="button">Pause</button>
-    <button id="reset" type="button">Reset</button>
-    
-    <input id="mileMarkerOption" type="radio" name="markerOption"/>
-    <label for="mileMarkerOption">Show Mile Markers</label>
-
-    <input id="checkpointMarkerOption" type="radio" name="markerOption"/>
-    <label for="checkpointMarkerOption">Show Checkpoint Markers</label>
-
-    <input id="hideMarkerOption" type="radio" name="markerOption"/>
-    <label for="hideMarkerOption">Hide Markers</label>
-
     <div id="map" class="map"></div>
+    <div class="settings">
+        <div class="settings-handle">Settings</div>
 
+        <fieldset>
+            <legend>Animation</legend>
+            <div>
+                <button id="play" type="button">Play</button>
+                <button id="pause" type="button" disabled="true">Pause</button>
+                <button id="reset" type="button" disabled="true">Reset</button>
+            </div>
+
+            <div>
+                <label for="intervalDropdown">Time Lapse</label>
+                <select id="intervalDropdown">
+                    <option value=".5"/>30 seconds</option>
+                    <option value="1"/>1 minute</option>
+                    <option value="5" />5 minutes</option>
+                    <option value="10" selected="true"/>10 minutes</option>
+                </select>
+            </div>
+
+            <div>
+                <input id="showHeatmapCheckbox" type="checkbox"/>
+                <label for="showHeatmapCheckbox">Show Heatmap</label>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>Mile Markers</legend>	
+            <ul>
+                <li>
+                    <input id="mileMarkerOption" type="radio" name="markerOption"/>
+                    <label for="mileMarkerOption">Show Mile Markers</label>
+                </li>
+                <li>
+                    <input id="checkpointMarkerOption" type="radio" name="markerOption"/>
+                    <label for="checkpointMarkerOption">Show Checkpoint Markers</label>
+                </li>
+                <li>
+                    <input id="hideMarkerOption" type="radio" name="markerOption" checked="true"/>
+                    <label for="hideMarkerOption">Hide Markers</label>
+                </li>
+            </ul>
+        </fieldset>
+
+        <fieldset>
+            <legend>Misc</legend>
+            <ul>
+                <li>
+                    <input id="clockCheckbox" type="checkbox"/>
+                    <label for="clockCheckbox">Show Clock</label>
+                </li>
+            </ul>
+        </fieldset>
+</div>
 </body>
-
-</html>​
+</html>
 

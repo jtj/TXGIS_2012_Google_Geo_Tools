@@ -15,8 +15,7 @@ of the Apache license (http://www.apache.org/licenses/LICENSE-2.0.html)
         </style>
         <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false&libraries=visualization"></script>
         <script type="text/javascript" src="js/course.js"></script>
-        <script type="text/javascript" src="js/timeslices-one-tenth.js"></script>
-        
+        <script type="text/javascript" src="js/timeslices-one-tenth.js"></script>       
         <script type="text/javascript">
         var next = undefined;
 
@@ -44,16 +43,12 @@ of the Apache license (http://www.apache.org/licenses/LICENSE-2.0.html)
                         setTimeout(next, 100);
                     }
                 };
-
                 
             }
 
             function startHeatmap(){
-
                 setTimeout(next, 100);
-
             }
-
 
             google.maps.event.addDomListener(window, 'load', initialize);
         </script>
